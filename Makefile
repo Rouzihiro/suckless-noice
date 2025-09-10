@@ -1,51 +1,32 @@
-VERSION = 0.8
+VERSION = 0.92
 PREFIX = /usr/local
-MANPREFIX = $(PREFIX)/man
+MANPREFIX = ${PREFIX}/share/man
 
-NOICELDLIBS = -lcurses
-NOPENLDLIBS =
-NOICEOBJ = dprintf.o noice.o spawn.o strlcat.o strlcpy.o strverscmp.o
-NOPENOBJ = nopen.o spawn.o
-BIN = noice nopen
-MAN = noice.1 nopen.1
+all: noice
 
-all: $(BIN)
+noice: noice.h
+	cc ${DFLAGS} noice.c -Wall -Wextra -Wno-missing-field-initializers -O2 -o $@ -lncurses
 
-noice: $(NOICEOBJ)
-	$(CC) $(CFLAGS) -o $@ $(NOICEOBJ) $(LDFLAGS) $(NOICELDLIBS)
-
-nopen: $(NOPENOBJ)
-	$(CC) $(CFLAGS) -o $@ $(NOPENOBJ) $(LDFLAGS) $(NOPENLDLIBS)
-
-dprintf.o: util.h
-noice.o: arg.h noiceconf.h util.h
-nopen.o: arg.h nopenconf.h util.h
-spawn.o: util.h
-strlcat.o: util.h
-strlcpy.o: util.h
-strverscmp.o: util.h
-
-noiceconf.h:
-	cp noiceconf.def.h $@
-
-nopenconf.h:
-	cp nopenconf.def.h $@
+noice.h:
+	cp noice.def.h $@
 
 install: all
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp -f $(BIN) $(DESTDIR)$(PREFIX)/bin
-	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	cp -f $(MAN) $(DESTDIR)$(MANPREFIX)/man1
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	cp -f noice ${DESTDIR}${PREFIX}/bin
+	chmod 755 ${DESTDIR}${PREFIX}/bin/noice
+	mkdir -p ${DESTDIR}${MANPREFIX}/man1
+	cp -f noice.1 ${DESTDIR}${MANPREFIX}/man1
+	chmod 644 ${DESTDIR}${MANPREFIX}/man1/noice.1
 
 uninstall:
-	cd $(DESTDIR)$(PREFIX)/bin && rm -f $(BIN)
-	cd $(DESTDIR)$(MANPREFIX)/man1 && rm -f $(MAN)
+	rm -f ${DESTDIR}${PREFIX}/bin/noice
+	rm -f ${DESTDIR}${MANPREFIX}/man1/noice.1
 
 dist: clean
-	mkdir -p noice-$(VERSION)
-	cp `find . -maxdepth 1 -type f` noice-$(VERSION)
-	tar -c noice-$(VERSION) | gzip > noice-$(VERSION).tar.gz
+	mkdir -p noice-${VERSION}
+	cp `find . -maxdepth 1 -type f` noice-${VERSION}
+	tar -c noice-${VERSION} | gzip > noice-${VERSION}.tar.gz
 
 clean:
-	rm -f $(BIN) $(NOICEOBJ) $(NOPENOBJ) noice-$(VERSION).tar.gz
-	rm -rf noice-$(VERSION)
+	rm -f noice noice.o noice-${VERSION}.tar.gz
+	rm -rf noice-${VERSION}
