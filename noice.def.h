@@ -13,16 +13,16 @@ const char *nocursor = "   ";
 /* indicator for what files are currently yanked */
 const char *yanksym = "* ";
 
-int dirsort = 0;     /* sort by grouping directories first */
+int dirsort = 1;     /* sort by grouping directories first */
 int sizesort = 0;    /* sort by size (directories will always be 4 KB) */
-int timesort = 0;    /* sort by last modified time */
+int timesort = 1;    /* sort by last modified time */
 int verssort = 1;    /* sort by version number */
 
-int tildehome = 0;   /* draw a tilde (~) for $HOME instead of the full path */
+int tildehome = 1;   /* draw a tilde (~) for $HOME instead of the full path */
 int usecolour = 1;   /* use colour to better distinguish between filetypes */
 int showsize = 0;    /* show the file size (doesn't affect sizesort) */
-int showhidden = 0;  /* show hidden files begging with a period "." */
-int redrawtime = 10; /* time between updates to the directory listing when idle */
+int showhidden = 1;  /* show hidden files begging with a period "." */
+int redrawtime = 20; /* time between updates to the directory listing when idle */
 
 /* masks used to match filetypes, their colour, and symbol */
 struct filetype filetypes[] = {
@@ -32,7 +32,7 @@ struct filetype filetypes[] = {
 	{ '=',      S_IFSOCK,   A_NORMAL|COLOR_PAIR(5) },  /* socket */
 	{ '|',      S_IFIFO,    A_NORMAL|COLOR_PAIR(5) },  /* fifo */
 	{ '#',      S_IFBLK,    A_NORMAL|COLOR_PAIR(3) },  /* block */
-	{ '*',      S_IXUSR,    A_NORMAL|COLOR_PAIR(2) },  /* exec */
+	{ '*',      S_IXUSR,    A_NORMAL|COLOR_PAIR(3) },  /* exec */
 	/* when non match we consider it a normal file and no highlighting is used */
 };
 
@@ -43,10 +43,15 @@ struct dirjump dirjumps[] = {
 	{ '~',   "~" },
 	{ 'r',   "/" },
 	{ '/',   "/" },
-	{ 'e',   "/etc" },
-	{ 'b',   "/bin" },
-	{ 'u',   "/usr" },
 	{ '.',   "~/.config" },
+  { 'd', "~/Downloads" },
+ 	{ 'w', "~/Documents/" },
+  { 'f', "~/dotfiles" },
+  { 'v', "~/Videos" },  
+  { 'p', "~/Pictures" }, 
+	{ 's', "~/suckless/" }, 
+  { 'l', "~/.local/bin" },
+  { 'm', "~/mount" },  
 	/* lastdir will be the last directory before jumping */
 	{ '\'',  lastdir },
 };
@@ -54,18 +59,19 @@ struct dirjump dirjumps[] = {
 /* file opening application matching */
 struct filerule filerules[] = {
 	/* regex to match against file name         command + flags */
-	{ "\\.(avi|mp4|mkv|mp3|ogg|flac|mov|wav)$", "ffplay"    },
-	{ "\\.(xz|gz|tar|zip|7z|rar|deb|bz2)$",     "aunpack"   },
-	{ "\\.(png|jpg|jpeg|gif)$",                 "sxiv -a &" },
-	{ "\\.(html|svg)$",                         "firefox"   },
-	{ "\\.pdf$",                                "mupdf"     },
-	{ ".",                                      "less"      },
+	{ "\\.(avi|mp4|mkv|mp3|ogg|flac|mov|wav)$", "mpv &"  		},
+	{ "\\.(xz|gz|tar|zip|7z|rar|deb|bz2)$",     "extract &" },
+	{ "\\.(png|jpg|jpeg|gif)$", 								"viewimg &" },
+	{ "\\.(html|svg)$",                         "brave"   	},
+	{ "\\.pdf$",                                "zathura" 	},
+	{ ".*",                                     "nvim" },
 };
 
 /* associate keys with an action */
 struct keybind keybinds[] = {
 	/* exit noice */
 	{ 'q',             SEL_QUIT   },
+	{ 'o', SEL_RUNARG, "xdg-open" },
 	/* go back up the directory tree */
 	{ 'h',             SEL_BACK   },
 	{ KEY_LEFT,        SEL_BACK   },
@@ -116,29 +122,27 @@ struct keybind keybinds[] = {
 	/* change directory */
 	{ 'c',             SEL_CD     },
 	/* prompt to create a new file or directory, nested paths are supported */
-	{ 'n',             SEL_NEW    },
+	{ 'a',             SEL_NEW    },
 	/* toggle sorting by directories first */
 	{ 'd',             SEL_DSORT  },
 	/* toggle sorting by version number */
 	{ 'v',             SEL_VERS   },
 	/* toggle sorting by last modified time */
-	{ 't',             SEL_MTIME  },
+	{ 'w',             SEL_MTIME  },
 	/* toggle sorting by file size */
 	{ 's',             SEL_SIZE   },
 	/* toggle showing file size */
 	{ 'S',             SEL_SSIZE  },
 	/* toggle showing hidden files */
-	{ CONTROL('H'),    SEL_DOTS   },
 	{ '.',             SEL_DOTS   },
 	/* force a redraw */
 	{ CONTROL('L'),    SEL_REDRAW },
 	/* rename marked entries */
-	{ 'r',             SEL_RENAME, "nano", "EDITOR" }, /* more than one, open in EDITOR or vi if empty */
-	/* run a command */
-	{ '!',             SEL_RUN,    "sh",  "SHELL" }, /* run SHELL or sh if empty */
+	{ 'r',             SEL_RENAME, "nvim", "EDITOR" },
+	{ 't',             SEL_RUN,    "sh",  "SHELL" },
 	{ 'z',             SEL_RUN,    "top", "NOICETOP" }, /* run NOICETOP or top if empty */
 	{ '?',             SEL_RUN,    "man noice", "NOICEMAN" }, /* run NOICEMAN or man noice if empty */
-	/* run a command with the current entry as an argument */
-	{ 'e',             SEL_RUNARG, "nano",            "EDITOR" }, /* open the current file with EDITOR or vi if empty */
-	{ 'M',             SEL_RUNARG, "mpv --shuffle", "NOICEMP" }, /* open the current file with NOICEMP or mpv if empty */
+	{ 'e',             SEL_RUNARG, "nvim",            "EDITOR" },
+	{ 'M',             SEL_RUNARG, "mpv --shuffle", "NOICEMP" },
+	{ 'x', SEL_RUNARG, "extract &" },
 };
